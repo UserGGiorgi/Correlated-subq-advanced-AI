@@ -1,1 +1,35 @@
-﻿
+﻿SELECT 
+    p.id AS product_id,
+    pt.title AS title,
+    m.id AS manufacturer_id,
+    m.name AS manufacturer
+FROM
+    product p
+JOIN 
+    product_title pt ON pt.id = p.product_title_id
+LEFT JOIN 
+    order_details od ON od.product_id = p.id
+LEFT JOIN 
+    manufacturer m ON m.id = p.manufacturer_id
+GROUP BY 
+    p.id, pt.title, m.id, m.name
+HAVING 
+    SUM(od.product_amount) = (
+        SELECT MAX(total_sales) 
+        FROM (
+            SELECT 
+                SUM(od2.product_amount) AS total_sales
+            FROM 
+                order_details od2
+            JOIN 
+                product p2 ON od2.product_id = p2.id
+            WHERE 
+                p2.product_title_id = pt.id
+            GROUP BY 
+                p2.manufacturer_id
+        ) AS manufacturer_sales
+    )
+OR 
+    SUM(od.product_amount) IS NULL
+ORDER BY 
+    p.id ASC;
